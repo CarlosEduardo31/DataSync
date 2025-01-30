@@ -266,12 +266,23 @@
       </div>
 
       <div class="input-group">
+        <label for="celDefault">Celular Padrão para Campos Vazios</label>
+        <input 
+          type="text" 
+          id="celDefault" 
+          placeholder="Digite o celular padrão (ex: 11999999999)" 
+          maxlength="11" 
+          pattern="\d{11}"
+        />
+      </div>
+
+      <div class="input-group">
         <label for="orgCode">Código da Organização</label>
         <input
           type="text"
           id="orgCode"
           placeholder="Digite o código da organização"
-          value="4mi8li"
+          value="eyjktq"
         />
       </div>
 
@@ -342,24 +353,32 @@
           <p>Caso alguma coluna esteja com nome diferente, os dados podem não ser carregados corretamente.</p>
 
           <h3>2. Preenchendo os Campos</h3>
-          <p>Antes de processar os dados, preencha os seguintes campos na ferramenta:</p>
-          <ul>
-            <li>
-              <strong>Prefixo do Email:</strong> Este prefixo será utilizado para gerar emails automaticamente caso algum registro não tenha email.<br>
-              Exemplo: Se o prefixo for <strong>usuario</strong>, os emails gerados serão <strong>usuario1@atesteme.com.br</strong>, <strong>usuario2@atesteme.com.br</strong>, etc.
-            </li>
-            <li>
-              <strong>Prefixo da Senha:</strong> Define o prefixo das senhas geradas automaticamente.<br>
-              Exemplo: Se o prefixo for <strong>SenhaUser</strong>, as senhas geradas serão <strong>SenhaUser1#</strong>, <strong>SenhaUser2#</strong>, etc.
-            </li>
-            <li>
-              <strong>CPF Inicial para Campos Vazios:</strong> Caso algum usuário não tenha CPF informado, a ferramenta irá gerar um CPF fictício a partir do número informado.<br>
-              Exemplo: Se for informado <strong>00000000001</strong>, os CPFs gerados serão <strong>00000000001</strong>, <strong>00000000002</strong>, etc.
-            </li>
-            <li>
-              <strong>Código da Organização:</strong> Identificador da organização a que os usuários pertencem. Se este código não for fornecido corretamente, os registros podem ser rejeitados pelo sistema.
-            </li>
-          </ul>
+<p>Antes de processar os dados, preencha os seguintes campos na ferramenta:</p>
+<ul>
+  <li>
+    <strong>Prefixo do Email:</strong> Este prefixo será utilizado para gerar emails automaticamente.<br>
+    Exemplo: Se o prefixo for <strong>usuario</strong>, os emails gerados serão <strong>usuario1@atesteme.com.br</strong>, <strong>usuario2@atesteme.com.br</strong>, etc.
+  </li>
+  <li>
+    <strong>Prefixo da Senha:</strong> Define o prefixo das senhas geradas automaticamente.<br>
+    Exemplo: Se o prefixo for <strong>SenhaUser</strong>, as senhas geradas serão <strong>SenhaUser1#</strong>, <strong>SenhaUser2#</strong>, etc.
+  </li>
+  <li>
+    <strong>CEP Padrão para Campos Vazios:</strong> Caso algum usuário não tenha CEP informado, será utilizado este valor padrão.<br>
+    Exemplo: Se informado <strong>00000000</strong>, todos os CEPs vazios serão substituídos por este valor.
+  </li>
+  <li>
+    <strong>CPF Inicial para Campos Vazios:</strong> Caso algum usuário não tenha CPF informado, a ferramenta irá gerar um CPF fictício a partir do número informado.<br>
+    Exemplo: Se for informado <strong>00000000001</strong>, os CPFs gerados serão <strong>00000000001</strong>, <strong>00000000002</strong>, etc.
+  </li>
+  <li>
+    <strong>Celular Padrão para Campos Vazios:</strong> Caso algum usuário não tenha telefone cadastrado, será utilizado este número.<br>
+    Exemplo: Se informado <strong>11999999999</strong>, todos os telefones vazios serão preenchidos com este valor.
+  </li>
+  <li>
+    <strong>Código da Organização:</strong> Identificador da organização a que os usuários pertencem. Se este código não for fornecido corretamente, os registros podem ser rejeitados pelo sistema.
+  </li>
+</ul>
 
           <h3>3. Carregando e Processando o Arquivo</h3>
             <ol>
@@ -385,6 +404,7 @@
    
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <script>
       let workbook;
       let transformedData = [];
@@ -461,7 +481,8 @@
   const senhaPrefix = document.getElementById("senhaPrefix").value;
   const orgCode = document.getElementById("orgCode").value;
   let cpfStart = document.getElementById("cpfStart").value.trim();
-  let cepDefault = document.getElementById("cepDefault").value.trim(); // Novo campo de CEP padrão
+  let cepDefault = document.getElementById("cepDefault").value.trim();
+  let celDefault = document.getElementById("celDefault").value.trim(); 
 
   if (!emailPrefix || !senhaPrefix) {
     showError("Por favor, preencha os prefixos de email e senha.");
@@ -479,6 +500,10 @@
     showError("CEP inválido. Digite um CEP com 8 números.");
     return;
   }
+  if (celDefault && !celDefault.match(/^\d{11}$/)) {
+    showError("Celular inválido. Digite um número com 11 dígitos.");
+    return;
+  }
 
   let cpfCounter = parseInt(cpfStart, 10);
   setLoading(true);
@@ -493,6 +518,7 @@
       const senha = `${senhaPrefix}${index + 1}#`;
       let cpf = cleanString(row.CPF || "");
       let cep = cleanString(row.cep || "");
+      let telefone = cleanString(row.TELEFONE || "");
 
       if (!cpf) {
         cpf = String(cpfCounter).padStart(11, "0");
@@ -503,10 +529,14 @@
         cep = cepDefault || ""; // Se o CEP for vazio, usa o CEP padrão informado
       }
 
+      if (!telefone && celDefault) {
+        telefone = cleanString(celDefault);
+      }
+
       return {
         "Nome": String(row.NOME || ""),
         "email": String(email),
-        "telefone": String(cleanString(row.TELEFONE || "")),
+        "telefone": telefone,
         "cpf": cpf,
         "dt nascimento": String(formatDate(row.ANIVERSARIO || "")),
         "cep": cep,
