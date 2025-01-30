@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DataSync</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+
+      .container {
+        width: 90%;
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: bold;
+      }
+
+      input[type="file"],
+      input[type="text"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      input[type="file"] {
+        padding: 8px;
+        background: #f8f9fa;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+
+      #downloadButton {
+        background-color: #2196f3;
+      }
+
+      #downloadButton:hover {
+        background-color: #1976d2;
+      }
+
+      .error-message {
+        color: #dc3545;
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        display: none;
+      }
+
+      #result {
+        margin-top: 20px;
+        display: none;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background: white;
+      }
+
+      th,
+      td {
+        padding: 12px 8px;
+        border: 1px solid #ddd;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      tr:hover {
+        background-color: #f5f5f5;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+        color: #666;
+      }
+
+       /* Adicionar novos estilos para o modal */
+       .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+      }
+
+      .modal-content {
+        position: relative;
+        background-color: #fff;
+        margin: 5% auto;
+        padding: 30px;
+        width: 80%;
+        max-width: 800px;
+        border-radius: 8px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+
+      .close-modal {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #666;
+      }
+
+      .tutorial-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background-color: #2196f3;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 100;
+      }
+
+      /* Estilos específicos para o conteúdo do tutorial */
+      .tutorial-content h2 {
+        color: #333;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+
+      .tutorial-content h3 {
+        color: #444;
+        margin: 20px 0 15px;
+      }
+
+      .tutorial-content ul {
+        margin: 15px 0;
+        padding-left: 30px;
+      }
+
+      .tutorial-content ol {
+        margin: 15px 0;
+        padding-left: 30px;
+      }
+
+      .tutorial-content li {
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+
+      .tutorial-content code {
+        background-color: #f4f4f4;
+        padding: 2px 5px;
+        border-radius: 3px;
+        font-family: monospace;
+        display: block;
+        margin: 10px 0;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>DataSync</h1>
+      <div class="error-message" id="errorMessage"></div>
+
+       <!-- Botão Fixo para Abrir Tutorial -->
+    <div class="tutorial-button" onclick="openTutorial()">Abrir Tutorial</div>
+
+      <div class="input-group">
+        <label for="fileUpload">Carregar arquivo Excel (.xlsx)</label>
+        <input type="file" id="fileUpload" accept=".xlsx" />
+      </div>
+
+      <div class="input-group">
+        <label for="emailPrefix">Prefixo do Email</label>
+        <input
+          type="text"
+          id="emailPrefix"
+          placeholder="Digite o prefixo do email"
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="senhaPrefix">Prefixo da Senha</label>
+        <input
+          type="text"
+          id="senhaPrefix"
+          placeholder="Digite o prefixo da senha"
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="cepDefault">CEP Padrão para Campos Vazios</label>
+        <input type="text" id="cepDefault" placeholder="Digite o CEP padrão" maxlength="8" pattern="\d{8}" />
+      </div>
+      
+
+      <div class="input-group">
+        <label for="cpfStart">CPF Inicial para Campos Vazios</label>
+        <input type="text" id="cpfStart" placeholder="Digite o CPF inicial (ex: 00000000001)"  pattern="\d{11}" maxlength="11" />
+      </div>
+
+      <div class="input-group">
+        <label for="orgCode">Código da Organização</label>
+        <input
+          type="text"
+          id="orgCode"
+          placeholder="Digite o código da organização"
+          value="4mi8li"
+        />
+      </div>
+
+      <button onclick="processData()" id="processButton">
+        Processar Dados
+      </button>
+      <div class="loading" id="loading">Processando dados...</div>
+
+      <div id="result">
+        <h3>Prévia dos Dados Transformados:</h3>
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>CPF</th>
+              <th>Data Nascimento</th>
+              <th>CEP</th>
+              <th>Tipo de Usuário</th>
+              <th>Código da Org</th>
+              <th>Período de Estudos</th>
+              <th>Nome da Escola</th>
+              <th>Turma</th>              
+              <th>Senha</th>
+              <th>Nome Social</th>
+              <th>Identificador Pessoal</th>
+              <th>Tipo de Identificador</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <button onclick="downloadExcel()" id="downloadButton">
+          Baixar Arquivo Excel
+        </button>
+      </div>
+    </div>
+
+     <!-- Modal de Tutorial -->
+     <div id="tutorialModal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal" onclick="closeTutorial()">&times;</span>
+        <div class="tutorial-content">
+          <h2>Tutorial de Uso da Ferramenta DataSync</h2>
+          <p>Bem-vindo à ferramenta DataSync! Aqui você pode carregar um arquivo Excel (.xlsx) contendo informações de usuários e convertê-lo em um formato padronizado.</p>
+
+          <h3>Passo a Passo para Utilização</h3>
+
+          <h3>1. Preparando o Arquivo Excel</h3>
+          <p>Antes de carregar o arquivo, certifique-se de que ele está formatado corretamente. O cabeçalho da planilha deve conter exatamente os seguintes nomes de colunas (respeitando maiúsculas e minúsculas):</p>
+          <ul>
+            <li><strong>NOME</strong></li>
+            <li><strong>email</strong></li>
+            <li><strong>TELEFONE</strong></li>
+            <li><strong>SUS</strong></li>
+            <li><strong>NIS</strong></li>
+            <li><strong>CPF</strong></li>
+            <li><strong>ANIVERSARIO</strong></li>
+            <li><strong>cep</strong></li>
+            <li><strong>Tipo de usuario</strong></li>
+            <li><strong>organiazationcode</strong></li>
+            <li><strong>schooling/tipo</strong></li>
+            <li><strong>educationalInstitution</strong></li>
+            <li><strong>turma</strong></li>
+            <li><strong>senha</strong></li>
+          </ul>
+          
+          <p>Caso alguma coluna esteja com nome diferente, os dados podem não ser carregados corretamente.</p>
+
+          <h3>2. Preenchendo os Campos</h3>
+          <p>Antes de processar os dados, preencha os seguintes campos na ferramenta:</p>
+          <ul>
+            <li>
+              <strong>Prefixo do Email:</strong> Este prefixo será utilizado para gerar emails automaticamente caso algum registro não tenha email.<br>
+              Exemplo: Se o prefixo for <strong>usuario</strong>, os emails gerados serão <strong>usuario1@atesteme.com.br</strong>, <strong>usuario2@atesteme.com.br</strong>, etc.
+            </li>
+            <li>
+              <strong>Prefixo da Senha:</strong> Define o prefixo das senhas geradas automaticamente.<br>
+              Exemplo: Se o prefixo for <strong>SenhaUser</strong>, as senhas geradas serão <strong>SenhaUser1#</strong>, <strong>SenhaUser2#</strong>, etc.
+            </li>
+            <li>
+              <strong>CPF Inicial para Campos Vazios:</strong> Caso algum usuário não tenha CPF informado, a ferramenta irá gerar um CPF fictício a partir do número informado.<br>
+              Exemplo: Se for informado <strong>00000000001</strong>, os CPFs gerados serão <strong>00000000001</strong>, <strong>00000000002</strong>, etc.
+            </li>
+            <li>
+              <strong>Código da Organização:</strong> Identificador da organização a que os usuários pertencem. Se este código não for fornecido corretamente, os registros podem ser rejeitados pelo sistema.
+            </li>
+          </ul>
+
+          <h3>3. Carregando e Processando o Arquivo</h3>
+            <ol>
+              <li>Clique no botão <strong>"Carregar arquivo Excel"</strong> e selecione o arquivo correto (.xlsx).</li>
+              <li>Preencha os campos obrigatórios conforme descrito acima.</li>
+              <li>Clique no botão <strong>"Processar Dados"</strong>.</li>
+              <li>Aguarde o processamento. Caso haja erros, verifique as mensagens exibidas.</li>
+              <li>A prévia dos dados processados será exibida em uma tabela para conferência.</li>
+              <li>Se tudo estiver correto, clique em <strong>"Baixar Arquivo Excel"</strong> para fazer o download dos dados transformados.</li>
+            </ol>
+
+          <h3>Regras Importantes</h3>
+          <ul>
+            <li>Se um usuário não tiver <strong>CPF</strong>, será gerado um automaticamente baseado no CPF inicial informado.</li>
+            <li>Será gerado um <strong>Email</strong> padrão utilizando o prefixo informado.</li>
+            <li>Será gerada uma <strong>Senha</strong> padrão utilizando o prefixo informado.</li>
+            <li>O arquivo deve seguir estritamente o formato exigido. Colunas com nomes diferentes podem causar falhas.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+   
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+      let workbook;
+      let transformedData = [];
+
+      function showError(message) {
+        const errorDiv = document.getElementById("errorMessage");
+        errorDiv.textContent = message;
+        errorDiv.style.display = "block";
+        setTimeout(() => {
+          errorDiv.style.display = "none";
+        }, 5000);
+      }
+
+      function setLoading(isLoading) {
+        const loadingDiv = document.getElementById("loading");
+        const processButton = document.getElementById("processButton");
+        loadingDiv.style.display = isLoading ? "block" : "none";
+        processButton.disabled = isLoading;
+      }
+
+      function cleanString(value) {
+        if (!value || value === "Não Informado") return "";
+        // Manter zeros à esquerda convertendo para string
+        return String(value).replace(/[^a-zA-Z0-9]/g, "");
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr || dateStr === "Não Informado") {
+          return "";
+        }
+        try {
+          const [day, month, year] = dateStr.split("/");
+          return `${year}/${month}/${day}`;
+        } catch {
+          return dateStr;
+        }
+      }
+
+      function getIdentifierAndType(row) {
+        if (row.SUS && row.SUS !== "Não Informado") {
+          return [row.SUS, "SUS"];
+        } else if (row.NIS && row.NIS !== "Não Informado") {
+          return [row.NIS, "NIS"];
+        }
+        return ["", ""];
+      }
+
+      document
+        .getElementById("fileUpload")
+        .addEventListener("change", function (event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              workbook = XLSX.read(e.target.result, { type: "array" });
+            } catch (error) {
+              showError(
+                "Erro ao ler o arquivo. Certifique-se de que é um arquivo Excel válido."
+              );
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        });
+
+        function processData() {
+  if (!workbook) {
+    showError("Por favor, selecione um arquivo Excel primeiro.");
+    return;
+  }
+
+  const emailPrefix = document.getElementById("emailPrefix").value;
+  const senhaPrefix = document.getElementById("senhaPrefix").value;
+  const orgCode = document.getElementById("orgCode").value;
+  let cpfStart = document.getElementById("cpfStart").value.trim();
+  let cepDefault = document.getElementById("cepDefault").value.trim(); // Novo campo de CEP padrão
+
+  if (!emailPrefix || !senhaPrefix) {
+    showError("Por favor, preencha os prefixos de email e senha.");
+    return;
+  }
+  if (!orgCode) {
+    showError("Por favor, preencha o código da organização.");
+    return;
+  }
+  if (!cpfStart.match(/^\d{11}$/)) {
+    showError("CPF inicial inválido. Digite 11 números.");
+    return;
+  }
+  if (cepDefault && !cepDefault.match(/^\d{8}$/)) {
+    showError("CEP inválido. Digite um CEP com 8 números.");
+    return;
+  }
+
+  let cpfCounter = parseInt(cpfStart, 10);
+  setLoading(true);
+
+  try {
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet);
+    
+    transformedData = data.map((row, index) => {
+      const [identifier, identifierType] = getIdentifierAndType(row);
+      const email = `${emailPrefix}${index + 1}@atesteme.com.br`;
+      const senha = `${senhaPrefix}${index + 1}#`;
+      let cpf = cleanString(row.CPF || "");
+      let cep = cleanString(row.cep || "");
+
+      if (!cpf) {
+        cpf = String(cpfCounter).padStart(11, "0");
+        cpfCounter++;
+      }
+
+      if (!cep) {
+        cep = cepDefault || ""; // Se o CEP for vazio, usa o CEP padrão informado
+      }
+
+      return {
+        "Nome": String(row.NOME || ""),
+        "email": String(email),
+        "telefone": String(cleanString(row.TELEFONE || "")),
+        "cpf": cpf,
+        "dt nascimento": String(formatDate(row.ANIVERSARIO || "")),
+        "cep": cep,
+        "Tipo de usuario": String(row["Tipo de usuario"] || ""),
+        "codigo da org": String(orgCode),
+        "Periodo de estudos": String(row["schooling/tipo"] || ""),
+        "Nome da escola": String(row.educationalInstitution || ""),
+        "turma": String(row.turma || ""),
+        "senha": String(senha),
+        "nome social": "",
+        "identificador pessoal": String(cleanString(identifier)),
+        "tipo de identificador": String(identifierType)
+      };
+    });
+
+    displayResult(transformedData);
+    document.getElementById("result").style.display = "block";
+  } catch (error) {
+    showError("Erro ao processar os dados: " + error.message);
+  } finally {
+    setLoading(false);
+  }
+}
+
+
+      function displayResult(data) {
+  const tableBody = document.querySelector("#dataTable tbody");
+  tableBody.innerHTML = "";
+
+  // Ordem correta dos cabeçalhos
+  const headers = [
+    "Nome", "email", "telefone", "cpf", "dt nascimento", "cep",
+    "Tipo de usuario", "codigo da org", "Periodo de estudos",
+    "Nome da escola", "turma", "senha", "nome social",
+    "identificador pessoal", "tipo de identificador"
+  ];
+
+  // Atualizar cabeçalhos da tabela
+  const thead = document.querySelector("#dataTable thead");
+  thead.innerHTML = `
+    <tr>
+      ${headers.map(header => `<th>${header}</th>`).join('')}
+    </tr>
+  `;
+
+  // Preencher dados na ordem correta
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    headers.forEach(header => {
+      const td = document.createElement("td");
+      td.textContent = row[header] || '';
+      tr.appendChild(td);
+    });
+    tableBody.appendChild(tr);
+  });
+}
+
+function downloadExcel() {
+  if (transformedData.length === 0) {
+    showError("Não há dados para baixar. Por favor, processe o arquivo primeiro.");
+    return;
+  }
+
+  try {
+    // Definir ordem das colunas
+    const columnOrder = [
+      "Nome", "email", "telefone", "cpf", "dt nascimento", "cep",
+      "Tipo de usuario", "codigo da org", "Periodo de estudos",
+      "Nome da escola", "turma", "senha", "nome social",
+      "identificador pessoal", "tipo de identificador"
+    ];
+
+    // Criar dados na ordem correta
+    const wsData = [
+      columnOrder, // Cabeçalhos
+      ...transformedData.map(row => columnOrder.map(field => row[field]))
+    ];
+
+          // Criar worksheet manualmente com tipos definidos
+          const ws = XLSX.utils.aoa_to_sheet(wsData, { cellDates: false });
+
+          // Forçar todas as células como texto
+          const range = XLSX.utils.decode_range(ws["!ref"]);
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+              const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+              if (cell) {
+                cell.t = "s"; // Tipo string
+                // Se o valor for vazio, garantir que seja uma string vazia
+                cell.v =
+                  cell.v === null || cell.v === undefined ? "" : String(cell.v);
+              }
+            }
+          }
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Dados Transformados");
+
+          // Forçar todas as células como texto usando opções de escrita
+          const wopts = {
+            bookType: "xlsx",
+            type: "array",
+            cellStyles: true,
+            sheetOptions: {
+              cellText: false, // Evitar conversão automática
+              cellDates: false,
+            },
+          };
+
+          XLSX.writeFile(wb, "dados_transformados.xlsx", wopts);
+        } catch (error) {
+          showError("Erro ao gerar o arquivo Excel: " + error.message);
+        }
+      }
+
+        // Funções para controlar o modal
+      function openTutorial() {
+        document.getElementById('tutorialModal').style.display = 'block';
+      }
+
+      function closeTutorial() {
+        document.getElementById('tutorialModal').style.display = 'none';
+      }
+
+      // Mostrar o modal ao carregar a página
+      window.onload = function() {
+        openTutorial();
+      }
+
+      // Fechar o modal se clicar fora do conteúdo
+      window.onclick = function(event) {
+        const modal = document.getElementById('tutorialModal');
+        if (event.target === modal) {
+          closeTutorial();
+        }
+      }
+    </script>
+  </body>
+</html>
